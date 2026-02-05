@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState, useEffect } from 'react';
+import { useCallback, useRef, useEffect } from 'react';
 import { 
   ReactFlow, 
   Background, 
@@ -9,7 +9,8 @@ import {
   Edge,
   Node,
   useReactFlow,
-  ReactFlowProvider
+  ReactFlowProvider,
+  ControlButton
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { cn } from '@/lib/utils';
@@ -22,7 +23,7 @@ import { generateInpFile } from '@/lib/inp-generator';
 import { parseInpFile } from '@/lib/inp-parser';
 import { saveAs } from 'file-saver';
 import { useToast } from '@/hooks/use-toast';
-import { apiRequest } from '@/lib/queryClient';
+import { Lock, Unlock } from 'lucide-react';
 
 const nodeTypes = {
   reservoir: ReservoirNode,
@@ -41,7 +42,6 @@ function DesignerInner() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { zoomIn, zoomOut, fitView } = useReactFlow();
 
-  // We connect local ReactFlow state to our global Zustand store for properties panel sync
   const { 
     nodes, 
     edges, 
@@ -55,10 +55,10 @@ function DesignerInner() {
     clearNetwork,
     deleteElement,
     selectedElementId,
-    selectedElementType
+    selectedElementType,
+    isLocked,
+    toggleIsLocked
   } = useNetworkStore();
-
-  const [isLocked, setIsLocked] = useState(false);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -75,7 +75,7 @@ function DesignerInner() {
       } else if (event.key.toLowerCase() === 'f') {
         fitView();
       } else if (event.key.toLowerCase() === 'l') {
-        setIsLocked(!isLocked);
+        toggleIsLocked();
       } else if ((event.key === 'Delete' || event.key === 'Backspace') && 
           selectedElementId && 
           selectedElementType) {
@@ -85,27 +85,24 @@ function DesignerInner() {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [deleteElement, selectedElementId, selectedElementType, zoomIn, zoomOut, fitView, isLocked]);
+  }, [deleteElement, selectedElementId, selectedElementType, zoomIn, zoomOut, fitView, toggleIsLocked]);
 
   const onNodesChange = useCallback(
     (changes: NodeChange[]) => {
-      if (isLocked) return;
       storeOnNodesChange(changes);
     },
-    [storeOnNodesChange, isLocked]
+    [storeOnNodesChange]
   );
 
   const onEdgesChange = useCallback(
     (changes: EdgeChange[]) => {
-      if (isLocked) return;
       storeOnEdgesChange(changes);
     },
-    [storeOnEdgesChange, isLocked]
+    [storeOnEdgesChange]
   );
 
   const onConnect = useCallback(
     (params: Connection) => {
-      if (isLocked) return;
       if (params.source === params.target) {
         toast({
           variant: "destructive",
@@ -116,7 +113,7 @@ function DesignerInner() {
       }
       storeOnConnect(params);
     },
-    [storeOnConnect, toast, isLocked]
+    [storeOnConnect, toast]
   );
 
   const onNodeClick = useCallback((_: React.MouseEvent, node: Node) => {
@@ -241,7 +238,15 @@ function DesignerInner() {
             elementsSelectable={true}
           >
             <Background color="#94a3b8" gap={20} size={1} />
-            <Controls className="!bg-white !shadow-xl !border-border" />
+            <Controls className="!bg-white !shadow-xl !border-border">
+              <ControlButton 
+                onClick={toggleIsLocked}
+                title={isLocked ? "Unlock Network" : "Lock Network"}
+                className="hover:bg-muted/50"
+              >
+                {isLocked ? <Lock className="w-4 h-4 text-orange-600" /> : <Unlock className="w-4 h-4 text-slate-600" />}
+              </ControlButton>
+            </Controls>
           </ReactFlow>
           
           {isLocked && (

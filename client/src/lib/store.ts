@@ -67,6 +67,7 @@ interface NetworkState {
   selectedElementType: 'node' | 'edge' | null;
   computationalParams: ComputationalParameters;
   outputRequests: OutputRequest[];
+  isLocked: boolean;
 
   // Actions
   onNodesChange: OnNodesChange;
@@ -82,6 +83,7 @@ interface NetworkState {
   updateComputationalParams: (params: Partial<ComputationalParameters>) => void;
   addOutputRequest: (request: Omit<OutputRequest, 'id'>) => void;
   removeOutputRequest: (id: string) => void;
+  toggleIsLocked: () => void;
 }
 
 let idCounter = 1;
@@ -98,20 +100,24 @@ export const useNetworkStore = create<NetworkState>((set, get) => ({
     tmax: 500.0,
   },
   outputRequests: [],
+  isLocked: false,
 
   onNodesChange: (changes: NodeChange[]) => {
+    if (get().isLocked) return;
     set({
       nodes: applyNodeChanges(changes, get().nodes as any) as WhamoNode[],
     });
   },
 
   onEdgesChange: (changes: EdgeChange[]) => {
+    if (get().isLocked) return;
     set({
       edges: applyEdgeChanges(changes, get().edges as any) as WhamoEdge[],
     });
   },
 
   onConnect: (connection: Connection) => {
+    if (get().isLocked) return;
     const id = getId();
     const edges = get().edges;
     const conduitCount = edges.filter(e => e.data?.type === 'conduit').length;
@@ -290,5 +296,9 @@ export const useNetworkStore = create<NetworkState>((set, get) => ({
 
   removeOutputRequest: (id) => {
     set({ outputRequests: get().outputRequests.filter(r => r.id !== id) });
+  },
+
+  toggleIsLocked: () => {
+    set({ isLocked: !get().isLocked });
   },
 }));
