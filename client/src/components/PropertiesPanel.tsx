@@ -19,16 +19,7 @@ export function PropertiesPanel() {
     deleteElement
   } = useNetworkStore();
 
-  if (!selectedElementId) {
-    return (
-      <div className="h-full flex items-center justify-center text-muted-foreground bg-muted/10">
-        <div className="text-center p-6">
-          <p className="font-medium">No Element Selected</p>
-          <p className="text-sm mt-1">Select a node or conduit on the canvas to edit its properties.</p>
-        </div>
-      </div>
-    );
-  }
+  if (!selectedElementId) return null;
 
   const isNode = selectedElementType === 'node';
   const element = isNode 

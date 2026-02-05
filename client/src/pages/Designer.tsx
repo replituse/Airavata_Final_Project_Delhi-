@@ -197,9 +197,11 @@ export default function Designer() {
         </div>
 
         {/* Properties Panel (30% width, min 300px) */}
-        <div className="w-[350px] border-l border-border bg-card shadow-2xl z-20 flex flex-col">
-          <PropertiesPanel />
-        </div>
+        {selectedElementId && (
+          <div className="w-[350px] border-l border-border bg-card shadow-2xl z-20 flex flex-col transition-all animate-in slide-in-from-right duration-300">
+            <PropertiesPanel />
+          </div>
+        )}
       </div>
     </div>
   );
