@@ -10,6 +10,7 @@ import {
   Node,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
+import { cn } from '@/lib/utils';
 import { useNetworkStore, WhamoNode, WhamoEdge } from '@/lib/store';
 import { ReservoirNode, SimpleNode, JunctionNode, SurgeTankNode, FlowBoundaryNode } from '@/components/NetworkNode';
 import { ConnectionEdge } from '@/components/ConnectionEdge';
@@ -198,11 +199,14 @@ export default function Designer() {
         </div>
 
         {/* Properties Panel (Sidebar) */}
-        {selectedElementId && (
-          <div className="w-[350px] h-full border-l border-border bg-card shadow-2xl z-20 flex flex-col animate-in slide-in-from-right duration-300">
-            <PropertiesPanel />
-          </div>
-        )}
+        <div 
+          className={cn(
+            "h-full border-l border-border bg-card shadow-2xl z-20 flex flex-col transition-all duration-300 ease-in-out",
+            selectedElementId ? "w-[350px] opacity-100" : "w-0 opacity-0 overflow-hidden border-none"
+          )}
+        >
+          {selectedElementId && <PropertiesPanel />}
+        </div>
       </div>
     </div>
   );
