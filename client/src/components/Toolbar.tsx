@@ -11,15 +11,12 @@ import {
   Upload, 
   MousePointer2,
   Settings2,
-  ListVideo,
-  Lock,
-  Unlock
+  ListVideo
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useNetworkStore } from '@/lib/store';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Separator } from '@/components/ui/separator';
-import { cn } from '@/lib/utils';
 import {
   Dialog,
   DialogContent,
@@ -83,8 +80,6 @@ export function Toolbar({ onExport, onSave, onLoad }: { onExport: () => void, on
     { label: 'Flow BC', icon: ArrowRightCircle, action: () => addNode('flowBoundary', { x: 50, y: 150 }), color: 'text-green-600' },
   ];
 
-  const { isLocked, toggleLock } = useNetworkStore();
-
   return (
     <div className="h-16 border-b border-border bg-card px-4 flex items-center justify-between shadow-sm z-10 relative">
       <div className="flex items-center gap-2">
@@ -96,25 +91,6 @@ export function Toolbar({ onExport, onSave, onLoad }: { onExport: () => void, on
               </Button>
             </TooltipTrigger>
             <TooltipContent>Select / Move</TooltipContent>
-          </Tooltip>
-        </div>
-
-        <Separator orientation="vertical" className="h-8 mx-2" />
-
-        <div className="flex items-center gap-1 bg-muted/30 p-1 rounded-lg border border-border/50">
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                className={cn("h-9 w-9", isLocked && "bg-accent")}
-                onClick={toggleLock}
-                data-testid="button-toggle-interactivity"
-              >
-                {isLocked ? <Lock className="w-4 h-4 text-orange-600" /> : <Unlock className="w-4 h-4" />}
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>Toggle Interactivity (L)</TooltipContent>
           </Tooltip>
         </div>
 
