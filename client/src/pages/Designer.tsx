@@ -17,6 +17,7 @@ import { ConnectionEdge } from '@/components/ConnectionEdge';
 import { PropertiesPanel } from '@/components/PropertiesPanel';
 import { Toolbar } from '@/components/Toolbar';
 import { generateInpFile } from '@/lib/inp-generator';
+import { parseInpFile } from '@/lib/inp-parser';
 import { saveAs } from 'file-saver';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
@@ -130,16 +131,31 @@ export default function Designer() {
 
     const reader = new FileReader();
     reader.onload = (event) => {
+      const content = event.target?.result as string;
+      const fileName = file.name.toLowerCase();
+
       try {
-        const json = JSON.parse(event.target?.result as string);
-        if (json.nodes && json.edges) {
-          loadNetwork(json.nodes, json.edges);
-          toast({ title: "Project Loaded", description: "Network topology restored." });
+        if (fileName.endsWith('.json')) {
+          const json = JSON.parse(content);
+          if (json.nodes && json.edges) {
+            loadNetwork(json.nodes, json.edges);
+            toast({ title: "Project Loaded", description: "Network topology restored from JSON." });
+          } else {
+            throw new Error("Invalid JSON format");
+          }
+        } else if (fileName.endsWith('.inp')) {
+          const { nodes, edges } = parseInpFile(content);
+          if (nodes.length > 0) {
+            loadNetwork(nodes, edges);
+            toast({ title: "Project Loaded", description: "Network topology restored from .inp file." });
+          } else {
+            throw new Error("No valid network elements found in .inp file");
+          }
         } else {
-          throw new Error("Invalid format");
+          throw new Error("Unsupported file type");
         }
       } catch (err) {
-        toast({ variant: "destructive", title: "Load Failed", description: "Invalid JSON file." });
+        toast({ variant: "destructive", title: "Load Failed", description: err instanceof Error ? err.message : "Invalid file." });
       }
     };
     reader.readAsText(file);
@@ -163,7 +179,7 @@ export default function Designer() {
         type="file" 
         ref={fileInputRef} 
         onChange={handleFileChange} 
-        accept=".json" 
+        accept=".json,.inp" 
         className="hidden" 
       />
 
