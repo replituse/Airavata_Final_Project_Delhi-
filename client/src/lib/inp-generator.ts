@@ -165,15 +165,15 @@ export function generateInpFile(nodes: WhamoNode[], edges: WhamoEdge[]) {
         ? nodes.find(n => n.id === req.elementId)
         : edges.find(e => e.id === req.elementId);
       
-      const label = element?.data?.nodeNumber || element?.data?.label || element?.id || req.elementId;
-      const typeStr = req.elementType === 'node' ? 'NODE' : 'ELEM';
+      const label = element?.data?.label || element?.data?.nodeNumber || element?.id || req.elementId;
+      const typeStr = (req.elementType === 'node' && element?.data?.type !== 'surgeTank') ? 'NODE' : 'ELEM';
       addL(` ${typeStr} ${label} ${req.variables.join(' ')}`);
     });
     addL(' FINISH');
   } else {
     addL('HISTORY');
     addL(' NODE 2 Q HEAD');
-    addL(' ElEM ST Q ELEV');
+    addL(' ELEM ST Q ELEV');
     addL(' FINISH');
   }
   addL('');
