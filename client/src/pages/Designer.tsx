@@ -253,13 +253,6 @@ function DesignerInner() {
           >
             <Background color="#94a3b8" gap={20} size={1} />
             <Controls className="!bg-white !shadow-xl !border-border">
-              <ControlButton 
-                onClick={toggleLock} 
-                title={isLocked ? "Unlock Network" : "Lock Network"}
-                className={cn(isLocked && "bg-slate-100")}
-              >
-                {isLocked ? <Lock className="h-4 w-4" /> : <Unlock className="h-4 w-4" />}
-              </ControlButton>
             </Controls>
           </ReactFlow>
           
