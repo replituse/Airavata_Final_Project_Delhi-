@@ -64,7 +64,9 @@ function DesignerInner() {
     clearNetwork,
     deleteElement,
     selectedElementId,
-    selectedElementType
+    selectedElementType,
+    isLocked,
+    toggleLock
   } = useNetworkStore();
 
   useEffect(() => {
@@ -81,6 +83,13 @@ function DesignerInner() {
         zoomOut();
       } else if (event.key.toLowerCase() === 'f') {
         fitView();
+      } else if (event.key.toLowerCase() === 'l') {
+        toggleLock();
+        // Find and click the XYFlow lock button to keep it in sync
+        const lockButton = document.querySelector('.react-flow__controls-button.react-flow__controls-interactive');
+        if (lockButton instanceof HTMLButtonElement) {
+          lockButton.click();
+        }
       } else if ((event.key === 'Delete' || event.key === 'Backspace') && 
           selectedElementId && 
           selectedElementType) {
@@ -90,24 +99,27 @@ function DesignerInner() {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [deleteElement, selectedElementId, selectedElementType, zoomIn, zoomOut, fitView]);
+  }, [deleteElement, selectedElementId, selectedElementType, zoomIn, zoomOut, fitView, toggleLock]);
 
   const onNodesChange = useCallback(
     (changes: NodeChange[]) => {
+      if (isLocked) return;
       storeOnNodesChange(changes);
     },
-    [storeOnNodesChange]
+    [storeOnNodesChange, isLocked]
   );
 
   const onEdgesChange = useCallback(
     (changes: EdgeChange[]) => {
+      if (isLocked) return;
       storeOnEdgesChange(changes);
     },
-    [storeOnEdgesChange]
+    [storeOnEdgesChange, isLocked]
   );
 
   const onConnect = useCallback(
     (params: Connection) => {
+      if (isLocked) return;
       if (params.source === params.target) {
         toast({
           variant: "destructive",
@@ -118,7 +130,7 @@ function DesignerInner() {
       }
       storeOnConnect(params);
     },
-    [storeOnConnect, toast]
+    [storeOnConnect, toast, isLocked]
   );
 
   const onNodeClick = useCallback((_: React.MouseEvent, node: Node) => {
@@ -238,14 +250,21 @@ function DesignerInner() {
             fitView
             className="bg-slate-50"
             proOptions={{ hideAttribution: true }}
-            nodesDraggable={true}
-            nodesConnectable={true}
+            nodesDraggable={!isLocked}
+            nodesConnectable={!isLocked}
             elementsSelectable={true}
           >
             <Background color="#94a3b8" gap={20} size={1} />
             <Controls className="!bg-white !shadow-xl !border-border">
             </Controls>
           </ReactFlow>
+          
+          {isLocked && (
+            <div className="absolute top-4 right-4 bg-orange-100 text-orange-800 px-3 py-1 rounded-md text-sm font-medium border border-orange-200 shadow-sm z-50 flex items-center gap-2">
+              <span className="w-2 h-2 bg-orange-500 rounded-full animate-pulse" />
+              Network Locked
+            </div>
+          )}
         </div>
 
         {/* Properties Panel (Sidebar) */}
