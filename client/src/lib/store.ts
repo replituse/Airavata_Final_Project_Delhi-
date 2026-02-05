@@ -67,6 +67,7 @@ interface NetworkState {
   selectedElementType: 'node' | 'edge' | null;
   computationalParams: ComputationalParameters;
   outputRequests: OutputRequest[];
+  isLocked: boolean;
 
   // Actions
   onNodesChange: OnNodesChange;
@@ -82,6 +83,7 @@ interface NetworkState {
   updateComputationalParams: (params: Partial<ComputationalParameters>) => void;
   addOutputRequest: (request: Omit<OutputRequest, 'id'>) => void;
   removeOutputRequest: (id: string) => void;
+  toggleLock: () => void;
 }
 
 let idCounter = 1;
@@ -98,6 +100,7 @@ export const useNetworkStore = create<NetworkState>((set, get) => ({
     tmax: 500.0,
   },
   outputRequests: [],
+  isLocked: false,
 
   onNodesChange: (changes: NodeChange[]) => {
     set({
@@ -290,5 +293,9 @@ export const useNetworkStore = create<NetworkState>((set, get) => ({
 
   removeOutputRequest: (id) => {
     set({ outputRequests: get().outputRequests.filter(r => r.id !== id) });
+  },
+
+  toggleLock: () => {
+    set({ isLocked: !get().isLocked });
   },
 }));

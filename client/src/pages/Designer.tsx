@@ -55,10 +55,10 @@ function DesignerInner() {
     clearNetwork,
     deleteElement,
     selectedElementId,
-    selectedElementType
+    selectedElementType,
+    isLocked,
+    toggleLock
   } = useNetworkStore();
-
-  const [isLocked, setIsLocked] = useState(false);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -75,7 +75,7 @@ function DesignerInner() {
       } else if (event.key.toLowerCase() === 'f') {
         fitView();
       } else if (event.key.toLowerCase() === 'l') {
-        setIsLocked(!isLocked);
+        toggleLock();
       } else if ((event.key === 'Delete' || event.key === 'Backspace') && 
           selectedElementId && 
           selectedElementType) {
@@ -85,7 +85,7 @@ function DesignerInner() {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [deleteElement, selectedElementId, selectedElementType, zoomIn, zoomOut, fitView, isLocked]);
+  }, [deleteElement, selectedElementId, selectedElementType, zoomIn, zoomOut, fitView, toggleLock]);
 
   const onNodesChange = useCallback(
     (changes: NodeChange[]) => {
@@ -241,7 +241,24 @@ function DesignerInner() {
             elementsSelectable={true}
           >
             <Background color="#94a3b8" gap={20} size={1} />
-            <Controls className="!bg-white !shadow-xl !border-border" />
+            <div className="absolute bottom-4 left-4 z-50 flex flex-col gap-2">
+              <Controls 
+                className="!bg-white !shadow-xl !border-border !m-0" 
+                showInteractive={false}
+              />
+              <Button
+                variant={isLocked ? "default" : "outline"}
+                size="icon"
+                className={cn(
+                  "h-10 w-10 bg-white shadow-xl border-border hover:bg-slate-50",
+                  isLocked && "bg-slate-900 text-white hover:bg-slate-800"
+                )}
+                onClick={toggleLock}
+                title={isLocked ? "Unlock Network" : "Lock Network"}
+              >
+                {isLocked ? <span className="text-lg">🔒</span> : <span className="text-lg">🔓</span>}
+              </Button>
+            </div>
           </ReactFlow>
           
           {isLocked && (
