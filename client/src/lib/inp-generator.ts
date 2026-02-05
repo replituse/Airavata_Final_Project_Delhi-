@@ -21,48 +21,59 @@ export function generateInpFile(nodes: WhamoNode[], edges: WhamoEdge[]) {
   addL('SYSTEM');
   addL('');
 
-  // Reservoirs
-  nodes.filter(n => n.type === 'reservoir').forEach(n => {
-    addComment(n.data.comment);
-    addL(`ELEM ${n.data.label} AT ${n.data.nodeNumber || n.id}`);
-  });
+  // Connectivity section
+  const visitedNodes = new Set<string>();
+  const visitedEdges = new Set<string>();
 
-  // Edges and Junctions
-  const junctionNodes = new Set(nodes.filter(n => n.type === 'junction').map(n => n.id));
-  
-  edges.forEach(e => {
-    const fromNode = nodes.find(n => n.id === e.source);
-    const toNode = nodes.find(n => n.id === e.target);
-    const fromId = fromNode?.data.nodeNumber || fromNode?.id || e.source;
-    const toId = toNode?.data.nodeNumber || toNode?.id || e.target;
+  function traverse(nodeId: string) {
+    if (visitedNodes.has(nodeId)) return;
+    visitedNodes.add(nodeId);
+
+    const node = nodes.find(n => n.id === nodeId);
+    if (!node) return;
+
+    // Elements AT this node
+    if (node.type === 'reservoir') {
+      addL(`ELEM ${node.data.label} AT ${node.data.nodeNumber || node.id}`);
+    } else if (node.type === 'surgeTank' || node.type === 'flowBoundary') {
+      addL(`ELEM ${node.data.label} AT ${node.data.nodeNumber || node.id}`);
+    }
+
+    // Outgoing edges
+    const outgoingEdges = edges.filter(e => e.source === nodeId);
     
-    // Check if source node is a junction
-    if (fromNode?.type === 'junction') {
-      addL('');
-      addL(`JUNCTION AT ${fromId}`);
-      addL('');
+    if (outgoingEdges.length > 0) {
+      if (node.type === 'junction' || outgoingEdges.length > 1) {
+        addL('');
+        addL(`JUNCTION AT ${node.data.nodeNumber || node.id}`);
+        addL('');
+      }
+
+      outgoingEdges.forEach(edge => {
+        if (visitedEdges.has(edge.id)) return;
+        visitedEdges.add(edge.id);
+        
+        const toNode = nodes.find(n => n.id === edge.target);
+        const toId = toNode?.data.nodeNumber || toNode?.id || edge.target;
+        const fromId = node.data.nodeNumber || node.id;
+
+        addL(`ELEM ${edge.data?.label || edge.id} LINK ${fromId} ${toId}`);
+        traverse(edge.target);
+      });
     }
+  }
 
-    if (e.data) addComment(e.data.comment);
-    addL(`ELEM ${e.data?.label || e.id} LINK ${fromId} ${toId}`);
+  // Start traversal from reservoirs
+  const reservoirs = nodes.filter(n => n.type === 'reservoir');
+  reservoirs.forEach(r => traverse(r.id));
 
-    if (junctionNodes.has(e.target)) {
-      addL('');
-      addL(`JUNCTION AT ${toId}`);
-      addL('');
+  // Handle any disconnected components (e.g. ST, FB if not reached by traversal)
+  nodes.forEach(n => {
+    if (!visitedNodes.has(n.id)) {
+      if (n.type === 'surgeTank' || n.type === 'flowBoundary') {
+        addL(`ELEM ${n.data.label} AT ${n.data.nodeNumber || n.id}`);
+      }
     }
-  });
-
-  // Surge Tanks
-  nodes.filter(n => n.type === 'surgeTank').forEach(n => {
-    addComment(n.data.comment);
-    addL(`ELEM ${n.data.label} AT ${n.data.nodeNumber}`);
-  });
-
-  // Flow boundaries
-  nodes.filter(n => n.type === 'flowBoundary').forEach(n => {
-    addComment(n.data.comment);
-    addL(`ELEM ${n.data.label} AT ${n.data.nodeNumber}`);
   });
 
   addL('');
