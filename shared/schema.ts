@@ -53,7 +53,10 @@ export const flowBoundaryPropsSchema = z.object({
   id: z.string(),
   nodeNumber: z.number().int(),
   scheduleNumber: z.number().int(),
-  scheduleData: z.string().optional(), // New field for user-entered schedule
+  schedulePoints: z.array(z.object({
+    time: z.number(),
+    flow: z.number()
+  })).optional(),
   comment: z.string().optional(),
 });
 

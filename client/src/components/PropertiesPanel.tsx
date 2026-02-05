@@ -141,15 +141,69 @@ export function PropertiesPanel() {
                       onChange={(e) => handleChange('scheduleNumber', e.target.value)} 
                     />
                   </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="scheduleData">Queue Schedule Data</Label>
-                    <Input 
-                      id="scheduleData" 
-                      placeholder="T 0 Q 3000 T 20 Q 0 ..."
-                      value={(element.data?.scheduleData as string) || ''} 
-                      onChange={(e) => handleChange('scheduleData', e.target.value)} 
-                    />
-                    <p className="text-[10px] text-muted-foreground">Format: T [time] Q [flow] ...</p>
+                  
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-sm font-medium">Queue Schedule Points</Label>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="h-7 px-2"
+                        onClick={() => {
+                          const points = (element.data?.schedulePoints as any[]) || [];
+                          handleChange('schedulePoints', [...points, { time: 0, flow: 0 }]);
+                        }}
+                      >
+                        Add Point
+                      </Button>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      {((element.data?.schedulePoints as any[]) || []).map((point, index) => (
+                        <div key={index} className="flex items-end gap-2 p-2 border rounded-md bg-muted/30 relative group">
+                          <div className="grid gap-1 flex-1">
+                            <Label className="text-[10px]">Time (T)</Label>
+                            <Input 
+                              type="number"
+                              className="h-7 text-xs"
+                              value={point.time}
+                              onChange={(e) => {
+                                const newPoints = [...(element.data?.schedulePoints as any[])];
+                                newPoints[index] = { ...newPoints[index], time: parseFloat(e.target.value) || 0 };
+                                handleChange('schedulePoints', newPoints);
+                              }}
+                            />
+                          </div>
+                          <div className="grid gap-1 flex-1">
+                            <Label className="text-[10px]">Flow (Q)</Label>
+                            <Input 
+                              type="number"
+                              className="h-7 text-xs"
+                              value={point.flow}
+                              onChange={(e) => {
+                                const newPoints = [...(element.data?.schedulePoints as any[])];
+                                newPoints[index] = { ...newPoints[index], flow: parseFloat(e.target.value) || 0 };
+                                handleChange('schedulePoints', newPoints);
+                              }}
+                            />
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7 text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={() => {
+                              const newPoints = (element.data?.schedulePoints as any[]).filter((_, i) => i !== index);
+                              handleChange('schedulePoints', newPoints);
+                            }}
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      ))}
+                      {(!element.data?.schedulePoints || (element.data.schedulePoints as any[]).length === 0) && (
+                        <p className="text-[10px] text-muted-foreground text-center py-2 italic">No schedule points added.</p>
+                      )}
+                    </div>
                   </div>
                 </>
               )}

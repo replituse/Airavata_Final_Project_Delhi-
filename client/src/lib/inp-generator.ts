@@ -162,7 +162,12 @@ export function generateInpFile(nodes: WhamoNode[], edges: WhamoEdge[]) {
   const flowBoundaries = nodes.filter(n => n.type === 'flowBoundary');
   flowBoundaries.forEach(n => {
     const d = n.data;
-    const schedule = d.scheduleData || 'T 0 Q 3000 T 20 Q 0 T 3000 Q 0';
+    let schedule = '';
+    if (d.schedulePoints && Array.isArray(d.schedulePoints) && d.schedulePoints.length > 0) {
+      schedule = d.schedulePoints.map((p: any) => `T ${p.time} Q ${p.flow}`).join(' ');
+    } else {
+      schedule = 'T 0 Q 3000 T 20 Q 0 T 3000 Q 0';
+    }
     addL(` QSCHEDULE ${d.scheduleNumber} ${schedule}`);
   });
   
