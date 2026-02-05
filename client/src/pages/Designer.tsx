@@ -19,7 +19,8 @@ import {
   Edge,
   Node,
   useReactFlow,
-  ReactFlowProvider
+  ReactFlowProvider,
+  ControlButton
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { cn } from '@/lib/utils';
@@ -251,24 +252,15 @@ function DesignerInner() {
             elementsSelectable={true}
           >
             <Background color="#94a3b8" gap={20} size={1} />
-            <div className="absolute bottom-4 left-4 z-50 flex flex-col gap-2">
-              <Controls 
-                className="!bg-white !shadow-xl !border-border !m-0" 
-                showInteractive={false}
-              />
-              <Button
-                variant={isLocked ? "default" : "outline"}
-                size="icon"
-                className={cn(
-                  "h-10 w-10 bg-white shadow-xl border-border hover:bg-slate-50",
-                  isLocked && "bg-slate-900 text-white hover:bg-slate-800"
-                )}
-                onClick={toggleLock}
+            <Controls className="!bg-white !shadow-xl !border-border">
+              <ControlButton 
+                onClick={toggleLock} 
                 title={isLocked ? "Unlock Network" : "Lock Network"}
+                className={cn(isLocked && "bg-slate-100")}
               >
                 {isLocked ? <Lock className="h-4 w-4" /> : <Unlock className="h-4 w-4" />}
-              </Button>
-            </div>
+              </ControlButton>
+            </Controls>
           </ReactFlow>
           
           {isLocked && (
