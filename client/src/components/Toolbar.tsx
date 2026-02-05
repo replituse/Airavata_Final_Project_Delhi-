@@ -11,8 +11,11 @@ import {
   Upload, 
   MousePointer2,
   Settings2,
-  ListVideo
+  ListVideo,
+  Lock,
+  Unlock
 } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { useNetworkStore } from '@/lib/store';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
