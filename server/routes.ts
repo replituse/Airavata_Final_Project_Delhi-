@@ -30,14 +30,11 @@ export async function registerRoutes(
       await writeFile(inpFile, inpContent);
 
       // Execute WHAMO.EXE
-      // Usage usually: whamo.exe input_file output_file
-      // We'll use wine if it's a Windows exe, but since it's Linux we might need wine installed
-      // However, the user provided a .EXE and expects it to work. 
-      // Replit environment might not have wine by default. 
-      // I'll try executing it directly first, if it fails I'll report.
-      exec(`${exePath} ${inpFile} ${outFile}`, async (error, stdout, stderr) => {
+      // Usage: whamo.exe input_file output_file
+      // On Replit, we use 'wine' to execute Windows binaries.
+      exec(`wine ${exePath} ${inpFile} ${outFile}`, async (error, stdout, stderr) => {
         try {
-          // Even if there's an error, we check if the .out file was created
+          // Check if .out file was created even if there's an error code
           let outContent = "";
           try {
             outContent = await readFile(outFile, "utf-8");
