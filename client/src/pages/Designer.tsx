@@ -215,54 +215,73 @@ function DesignerInner() {
   };
 
   const [isExecuting, setIsExecuting] = useState(false);
+  const inpFileInputRef = useRef<HTMLInputElement>(null);
 
   const handleExecuteWhamo = async () => {
-    try {
-      setIsExecuting(true);
-      
-      const lines = getInpLines(nodes, edges, computationalParams, outputRequests);
-      const inpContent = lines.join('\n');
-      
-      const response = await fetch("/api/whamo/execute", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ inpContent }),
-      });
+    inpFileInputRef.current?.click();
+  };
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Execution failed");
+  const handleInpFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      const inpContent = event.target?.result as string;
+      
+      try {
+        setIsExecuting(true);
+        const response = await fetch("/api/whamo/execute", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ inpContent }),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || "Execution failed");
+        }
+
+        const { outContent } = await response.json();
+        
+        // Download the .out file
+        const blob = new Blob([outContent], { type: 'text/plain;charset=utf-8' });
+        saveAs(blob, `${file.name.replace('.inp', '')}.out`);
+        
+        toast({ 
+          title: "Success", 
+          description: "WHAMO execution completed. .out file downloaded." 
+        });
+      } catch (err) {
+        toast({ 
+          variant: "destructive", 
+          title: "Execution Error", 
+          description: err instanceof Error ? err.message : "Failed to execute WHAMO engine." 
+        });
+      } finally {
+        setIsExecuting(false);
+        // Reset input
+        e.target.value = '';
       }
-
-      const { outContent } = await response.json();
-      
-      // Download the .out file
-      const blob = new Blob([outContent], { type: 'text/plain;charset=utf-8' });
-      saveAs(blob, `results_${Date.now()}.out`);
-      
-      toast({ 
-        title: "Success", 
-        description: "WHAMO execution completed. .out file downloaded." 
-      });
-    } catch (err) {
-      toast({ 
-        variant: "destructive", 
-        title: "Execution Error", 
-        description: err instanceof Error ? err.message : "Failed to execute WHAMO engine." 
-      });
-    } finally {
-      setIsExecuting(false);
-    }
+    };
+    reader.readAsText(file);
   };
 
   return (
     <div className="flex flex-col h-screen w-full overflow-hidden bg-background text-foreground">
-      {/* Hidden File Input */}
+      {/* Hidden File Inputs */}
       <input 
         type="file" 
         ref={fileInputRef} 
         onChange={handleFileChange} 
         accept=".json,.inp" 
+        className="hidden" 
+      />
+      <input 
+        type="file" 
+        ref={inpFileInputRef} 
+        onChange={handleInpFileChange} 
+        accept=".inp" 
         className="hidden" 
       />
 
