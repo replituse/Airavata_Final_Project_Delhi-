@@ -1,19 +1,20 @@
 import { WhamoNode, WhamoEdge, useNetworkStore } from './store';
 import { saveAs } from 'file-saver';
 
-export function generateInpFile(nodes: WhamoNode[], edges: WhamoEdge[]) {
+export function getInpLines(nodes: WhamoNode[], edges: WhamoEdge[], computationalParams?: any, outputRequests?: any[]) {
   const state = useNetworkStore.getState();
+  const actualCP = computationalParams || state.computationalParams;
+  const actualOR = outputRequests || state.outputRequests;
+  
   const lines: string[] = [];
 
   // Helper to add line
-  const add = (str: string) => lines.push(str);
+  const addL = (str: string) => lines.push(str);
   const addComment = (comment?: string) => {
     if (comment) {
-      add(`c ${comment}`);
+      addL(`c ${comment}`);
     }
   };
-
-  const addL = (str: string) => lines.push(str);
   
   addL('c Project Name');
   addL('C  SYSTEM CONNECTIVITY');
@@ -67,7 +68,7 @@ export function generateInpFile(nodes: WhamoNode[], edges: WhamoEdge[]) {
   const reservoirs = nodes.filter(n => n.type === 'reservoir');
   reservoirs.forEach(r => traverse(r.id));
 
-  // Handle any disconnected components (e.g. ST, FB if not reached by traversal)
+  // Handle any disconnected components
   nodes.forEach(n => {
     if (!visitedNodes.has(n.id)) {
       if (n.type === 'surgeTank' || n.type === 'flowBoundary') {
@@ -177,9 +178,9 @@ export function generateInpFile(nodes: WhamoNode[], edges: WhamoEdge[]) {
   addL('');
   addL('C OUTPUT REQUEST');
   addL('');
-  if (state.outputRequests.length > 0) {
+  if (actualOR.length > 0) {
     addL('HISTORY');
-    state.outputRequests.forEach(req => {
+    actualOR.forEach((req: any) => {
       const element = req.elementType === 'node' 
         ? nodes.find(n => n.id === req.elementId)
         : edges.find(e => e.id === req.elementId);
@@ -202,7 +203,7 @@ export function generateInpFile(nodes: WhamoNode[], edges: WhamoEdge[]) {
   addL('');
   addL('C COMPUTATIONAL PARAMETERS');
   addL('CONTROL');
-  const cp = state.computationalParams;
+  const cp = actualCP;
   addL(` DTCOMP ${cp.dtcomp} DTOUT ${cp.dtout} TMAX ${cp.tmax}`);
   addL('FINISH');
   addL('');
@@ -210,6 +211,11 @@ export function generateInpFile(nodes: WhamoNode[], edges: WhamoEdge[]) {
   addL('GO');
   addL('GOODBYE');
 
+  return lines;
+}
+
+export function generateInpFile(nodes: WhamoNode[], edges: WhamoEdge[]) {
+  const lines = getInpLines(nodes, edges);
   const blob = new Blob([lines.join('\n')], { type: 'text/plain;charset=utf-8' });
   saveAs(blob, `network_${Date.now()}.inp`);
 }

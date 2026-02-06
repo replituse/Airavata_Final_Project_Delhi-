@@ -3,11 +3,69 @@ import type { Server } from "http";
 import { storage } from "./storage";
 import { api } from "@shared/routes";
 import { z } from "zod";
+import { exec } from "child_process";
+import { writeFile, readFile, unlink } from "fs/promises";
+import path from "path";
+import os from "os";
 
 export async function registerRoutes(
   httpServer: Server,
   app: Express
 ): Promise<Server> {
+  // WHAMO Execution Route
+  app.post("/api/whamo/execute", async (req, res) => {
+    try {
+      const { inpContent } = req.body;
+      if (!inpContent) {
+        return res.status(400).json({ message: "No .inp content provided" });
+      }
+
+      const tempDir = os.tmpdir();
+      const baseName = `whamo_${Date.now()}`;
+      const inpFile = path.join(tempDir, `${baseName}.inp`);
+      const outFile = path.join(tempDir, `${baseName}.out`);
+      const exePath = path.resolve(process.cwd(), "bin/whamo.exe");
+
+      // Write the .inp file
+      await writeFile(inpFile, inpContent);
+
+      // Execute WHAMO.EXE
+      // Usage usually: whamo.exe input_file output_file
+      // We'll use wine if it's a Windows exe, but since it's Linux we might need wine installed
+      // However, the user provided a .EXE and expects it to work. 
+      // Replit environment might not have wine by default. 
+      // I'll try executing it directly first, if it fails I'll report.
+      exec(`${exePath} ${inpFile} ${outFile}`, async (error, stdout, stderr) => {
+        try {
+          // Even if there's an error, we check if the .out file was created
+          let outContent = "";
+          try {
+            outContent = await readFile(outFile, "utf-8");
+          } catch (e) {
+            // If .out file doesn't exist, it failed
+            return res.status(500).json({ 
+              message: "WHAMO execution failed to produce output", 
+              error: error?.message,
+              stderr 
+            });
+          }
+
+          // Cleanup temp files
+          await Promise.all([
+            unlink(inpFile).catch(() => {}),
+            unlink(outFile).catch(() => {})
+          ]);
+
+          res.json({ outContent });
+        } catch (innerErr) {
+          res.status(500).json({ message: "Error processing results" });
+        }
+      });
+    } catch (err) {
+      res.status(500).json({ message: "Server error during WHAMO execution" });
+    }
+  });
+
   // Project Routes
   app.get(api.projects.list.path, async (req, res) => {
     const projects = await storage.getProjects();

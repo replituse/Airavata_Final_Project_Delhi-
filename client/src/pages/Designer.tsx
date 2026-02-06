@@ -27,7 +27,7 @@ import { ReservoirNode, SimpleNode, JunctionNode, SurgeTankNode, FlowBoundaryNod
 import { ConnectionEdge } from '@/components/ConnectionEdge';
 import { PropertiesPanel } from '@/components/PropertiesPanel';
 import { Toolbar } from '@/components/Toolbar';
-import { generateInpFile } from '@/lib/inp-generator';
+import { generateInpFile, getInpLines } from '@/lib/inp-generator';
 import { parseInpFile } from '@/lib/inp-parser';
 import { saveAs } from 'file-saver';
 import { useToast } from '@/hooks/use-toast';
@@ -214,6 +214,47 @@ function DesignerInner() {
     }
   };
 
+  const [isExecuting, setIsExecuting] = useState(false);
+
+  const handleExecuteWhamo = async () => {
+    try {
+      setIsExecuting(true);
+      
+      const lines = getInpLines(nodes, edges, computationalParams, outputRequests);
+      const inpContent = lines.join('\n');
+      
+      const response = await fetch("/api/whamo/execute", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ inpContent }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Execution failed");
+      }
+
+      const { outContent } = await response.json();
+      
+      // Download the .out file
+      const blob = new Blob([outContent], { type: 'text/plain;charset=utf-8' });
+      saveAs(blob, `results_${Date.now()}.out`);
+      
+      toast({ 
+        title: "Success", 
+        description: "WHAMO execution completed. .out file downloaded." 
+      });
+    } catch (err) {
+      toast({ 
+        variant: "destructive", 
+        title: "Execution Error", 
+        description: err instanceof Error ? err.message : "Failed to execute WHAMO engine." 
+      });
+    } finally {
+      setIsExecuting(false);
+    }
+  };
+
   return (
     <div className="flex flex-col h-screen w-full overflow-hidden bg-background text-foreground">
       {/* Hidden File Input */}
@@ -226,11 +267,33 @@ function DesignerInner() {
       />
 
       {/* Top Bar */}
-      <Toolbar 
-        onExport={handleGenerateInp} 
-        onSave={handleSave} 
-        onLoad={handleLoadClick} 
-      />
+      <div className="flex items-center justify-between px-4 py-2 border-b bg-card">
+        <div className="flex items-center gap-4">
+          <Toolbar 
+            onExport={handleGenerateInp} 
+            onSave={handleSave} 
+            onLoad={handleLoadClick} 
+          />
+        </div>
+        <div className="flex items-center gap-2">
+          <Button 
+            data-testid="button-execute-whamo"
+            onClick={handleExecuteWhamo}
+            disabled={isExecuting}
+            variant="default"
+            className="bg-primary hover:bg-primary/90"
+          >
+            {isExecuting ? (
+              <span className="flex items-center gap-2">
+                <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                Executing...
+              </span>
+            ) : (
+              "Generate .out File"
+            )}
+          </Button>
+        </div>
+      </div>
 
       {/* Main Content Area */}
       <div className="flex-1 flex overflow-hidden relative">
