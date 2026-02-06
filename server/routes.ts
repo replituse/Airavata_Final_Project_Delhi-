@@ -31,8 +31,9 @@ export async function registerRoutes(
 
       // Execute WHAMO.EXE
       // Usage: whamo.exe input_file output_file
-      // On Replit, we use 'wine' to execute Windows binaries.
-      exec(`wine ${exePath} ${inpFile} ${outFile}`, async (error, stdout, stderr) => {
+      // On Replit, we use 'wine64' to execute Windows binaries if available.
+      const wineCmd = "wine64";
+      exec(`${wineCmd} ${exePath} ${inpFile} ${outFile}`, async (error, stdout, stderr) => {
         try {
           // Check if .out file was created even if there's an error code
           let outContent = "";
